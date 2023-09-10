@@ -1,0 +1,16 @@
+number: '0123456789'
+symbol: ""
+lang_char: ''
+batch_size: 32 #325
+
+#Data processing
+
+batch_max_length: 34 
+imgH: 100
+imgW: 200
+
+num_fiducial: 20
+input_channel: 1
+output_channel: 256
+hidden_size: 256
+num_class: 12

@@ -1,0 +1,1 @@
+detr-resnet-50_finetuned_WFCR3/pytorch_model.bin filter=lfs diff=lfs merge=lfs -text
