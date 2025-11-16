@@ -1,34 +1,51 @@
-from PIL import Image, ImageTk
 from wfcr import WFCR
 from gui import Window
+from PIL import Image
+from qreader import QReader
+import cv2
+import requests
+import json
 
-def get_prediction(path):
-    image = Image.open(path) #открываем изображение
 
-    img, val_b, val_a = reader.detect(image, threshold=0.8) #отправка изображений в детектор (можно изменить точность детекции параметром threshold(по умолчанию 80%))
-    result = ""
+def get_prediction(input_image):
 
-    if type(val_b).__name__ == 'ndarray': #если детектор обнаружил значения перед запятой
-        pred_val_b = reader.recognize_values(val_b) #отправляем их в распознаватель
-        if len(pred_val_b) > 5:
-            pred_val_b = pred_val_b[:5] #отбрасываем лишние значения с конца (по умолчанию не больше 5)
-        result += pred_val_b
+    img, img_bbox, img_mask = reader.detect(input_image, threshold=0.8) #отправка изображений в детектор (можно изменить точность детекции параметром threshold(по умолчанию 80%))
+
+    result, indx = reader.recognize_values(img_bbox)
+    qrCode = qreader.detect_and_decode(image=cv2.cvtColor(cv2.imread(input_image), cv2.COLOR_BGR2RGB))
     
-    if type(val_a).__name__ == 'ndarray':
-        pred_val_a = reader.recognize_values(val_a) #если детектор обнаружил значения после запятой
-        if len(pred_val_a) > 3:
-                pred_val_a = pred_val_a[-3:] #отбрасываем лишние значения с начала (по умолчанию не больше 3)
-        result += f",{pred_val_a}"
-    
-    window.result_window(img, result, win_width=300) #выводим результат в отдельном окне (можно изменить размер фотографии параметром win_width)
-    
+    if indx > 1:
+        img_bbox = img_bbox.rotate(180)
+
+    window.result_window(img_bbox, result, qrCode, win_width=500) #выводим результат в отдельном окне (можно изменить размер фотографии параметром win_width)
+   
+    #msg = result
+    #url = "http://127.0.0.1:8000/api/data"
+    #data = {"meter": msg}
+    #response = requests.post(url, data=data)
+    #print(response.text) 
+def get_value(input_image):
+
+    img, img_bbox, img_mask = reader.detect(input_image, threshold=0.8) #отправка изображений в детектор (можно изменить точность детекции параметром threshold(по умолчанию 80%))
+    qrCode = qreader.detect_and_decode(image=cv2.cvtColor(cv2.imread(input_image), cv2.COLOR_BGR2RGB))
+    result = reader.recognize_values(img_bbox)[0]
+
+    return result,qrCode
+
+
+
 
 if __name__ == "__main__":
     reader = WFCR()
+    qreader = QReader()
     window = Window(get_prediction)
     window.mainloop()
-    
-    
-    
-    
-    
+    result,qrCode = get_value('E:\WFCR_user\photo\IMG_20231023_110108.jpg')
+    print(f"RESULT = {type(result)}")
+    url = "http://127.0.0.1:8000/api/data/"
+    data = {
+    "meter": f"{result}",
+    "qr": f"{qrCode}"
+    }
+    response = requests.post(url, data=data)
+    print(response.json)
